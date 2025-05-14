@@ -8,9 +8,13 @@
         background-color: rgb(40, 40, 43);
         color: white;
         font-family: courier;
-        font-size: 15px;
+        font-size: 16px;
         padding: 20%;
       }
+      
+      pre {
+        background-color: rgb(60, 60, 60);
+      {
     </style>
 </head>
 
@@ -35,81 +39,81 @@
         3. writing logs to /var/log/pgadmin during runtime, we don't have permissions as random UID (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
         4. writing files to /tmp (Important only if using securityContext readOnlyFileSystem=true, not a must in OpenShift restricted-v2 SCC / restricted PSS) <br><br>
         5. /pgadmin4/config_distro.py file is getting overriden during runtime, we don't have permissions if we are using random UID (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
-        6. Allow the usage of 'python3' CLI <br><br><br><br><br>
+        6. Unlock the usage of 'python3' CLI <br><br><br><br><br>
 
         Lets look at each of them <br><br><br>
         1. Probably the easiest, adding the next environment variable to your pod. PGADMIN_DISABLE_POSTFIX=true <br>
-        <code>
-            env:
-            - name: PGADMIN_DISABLE_POSTFIX
-              value: "true"
-        </code> <br><br>
+<pre>
+env:
+- name: PGADMIN_DISABLE_POSTFIX
+  value: "true"
+</pre> <br><br>
         2. Adding a volume to /var/lib/pgadmin path, can be either PVC or emptyDir <br>
-        <code>
-            volumes:
-            - name: pgadmin-data
-              emptyDir: {}
-        </code> <br><br>
-        <code>
-            volumeMounts:
-            - name: pgadmin-data
-              mountPath: /var/lib/pgadmin
-        </code> <br><br>
+<pre>
+volumes:
+- name: pgadmin-data
+  emptyDir: {}
+</pre> <br><br>
+<pre>
+volumeMounts:
+- name: pgadmin-data
+  mountPath: /var/lib/pgadmin
+</pre> <br><br>
         3, 4. Adding an emptyDir volume to /var/log/pgadmin, /tmp paths. <br>
-        <code>
-            volumes:
-            - name: empty-dir
-              emptyDir: {}
-        </code>
-        <code>
-            volumeMounts:
-            - name: empty-dir
-              mountPath: /var/log/pgadmin
-              subPath: logs
-            - name: empty-dir
-              mountPath: /tmp
-              subPath: tmp
-        </code> <br><br>
+<pre>
+volumes:
+- name: empty-dir
+  emptyDir: {}
+</pre>
+<pre>
+volumeMounts:
+- name: empty-dir
+  mountPath: /var/log/pgadmin
+  subPath: logs
+- name: empty-dir
+  mountPath: /tmp
+  subPath: tmp
+</pre> <br><br>
         5. As for this config_distro.py file, he is empty and getting overriden during runtime, you can either use a configMap to mount your configuration there or changing the file permissions with an initContainer and emptyDir and then mounting it in the main container as I did. im adding my initContainer and main container configuration. <br>
-        <code>
-          initContainers:
-          - name: modify-config-distro-py-permissions
-            workingDir: /emptydir
-            command: ["sh", "-x", "-c"]
-            args: ["cp -p /pgadmin4/config_distro.py . && chmod 777 config_distro.py"]
-            image: docker.io/dpage/pgadmin4:<MAKE SURE ITS THE SAME IMAGE AS THE ORIGINAL CONTAINER>
-            securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop: ["ALL"]
-              privileged: false
-              readOnlyRootFilesystem: true
-              runAsNonRoot: true
-              seLinuxOptions: {}
-              seccompProfile:
-                type: RuntimeDefault
-            volumeMounts:
-            - mountPath: /emptydir
-              name: empty-dir
-        </code> <br><br>
-        <code>
-          containers:
-          - volumeMounts
-            - name: empty-dir
-              mountPath: /pgadmin4/config_distro.py
-              subPath: config_distro.py
-              ...
-              ...
-        </code> <br><br>
+<pre>
+initContainers:
+- name: modify-config-distro-py-permissions
+  workingDir: /emptydir
+  command: ["sh", "-x", "-c"]
+  args: ["cp -p /pgadmin4/config_distro.py . && chmod 777 config_distro.py"]
+  image: docker.io/dpage/pgadmin4:<MAKE SURE ITS THE SAME IMAGE AS THE ORIGINAL CONTAINER>
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    privileged: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    seLinuxOptions: {}
+    seccompProfile:
+      type: RuntimeDefault
+    volumeMounts:
+    - mountPath: /emptydir
+      name: empty-dir
+</pre>
+<pre>
+containers:
+- volumeMounts
+  - name: empty-dir
+    mountPath: /pgadmin4/config_distro.py
+    subPath: config_distro.py
+    ...
+    ...
+</pre> <br><br>
         6. If you take a look at the Dockerfile of the pgAdmin image <a href="https://github.com/pgadmin-org/pgadmin4/blob/master/Dockerfile">Here</a>, at the end you can see that they are using setcap command which allows the binary of python3.12 to run and expose at ports lower than 1024 even if you are using non root user, they were trying to allow this because they are using UID 5050 in their container and wanted to maintain usage of port 80. When using restricted PSS or OpenShift SCCs, you must drop all capabilities. We are lucky that the only capability that is allowed with these policies is NET_BIND_SERVICE. The solution is to drop all capabilities and add this capability. Im adding how it supposed to look like. <br>
-        <code>
-          capabilities:
-            drop: ["ALL"]
-            add: ["NET_BIND_SERVICE"]
-        </code> <br><br><br>
+<pre>
+capabilities:
+  drop: ["ALL"]
+  add: ["NET_BIND_SERVICE"]
+</pre> <br><br><br>
         
         I have added a deployment.yaml example file in my github pages repository. <a href="https://korenp1.github.io/deployment.yaml">deployment.yaml</a> <br>
-        <code>kubectl create -f https://korenp1.github.io/deployment.yaml -n YOUR_NAMESPACE</code> <br><br>
+        <pre>kubectl create -f https://korenp1.github.io/deployment.yaml -n YOUR_NAMESPACE</pre> <br><br>
         Thanks for reading everyone. Koren.
     </p>
 </body>

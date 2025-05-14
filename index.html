@@ -40,7 +40,7 @@
         3. Writing logs to /var/log/pgadmin during runtime, we don't have permissions as random UID (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
         4. Writing files to /tmp (Important only if using securityContext readOnlyFileSystem=true, not a must in OpenShift restricted-v2 SCC / restricted PSS) <br><br>
         5. /pgadmin4/config_distro.py file is getting overriden during runtime, we don't have permissions if we are using random UID (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
-        6. Unlock the usage of 'python3' CLI (Operation Not Permitted error) <br><br><br><br><br>
+        6. Unlock the usage of 'python3' CLI (/venv/bin/python3: Operation not permitted) error. <br><br><br><br><br>
 
         Lets look at each of them <br><br><br>
         1. Probably the easiest, adding the next environment variable to your pod. PGADMIN_DISABLE_POSTFIX=true <br>

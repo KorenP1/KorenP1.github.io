@@ -2,11 +2,11 @@
 <html lang="en">
 
 <head>
-    <title>pgAdmin4 restricted k8s deployment</title>
+    <title>pgAdmin4 Restricted K8S</title>
 </head>
 
 <body>
-    <h1>pgAdmin4 running on most restricted kubernetes environment</h1>
+    <h1>pgAdmin4 running on most restricted kubernetes environments</h1>
     <a href="https://github.com/KorenP1">GitHub</a>
     <p>
         May 14th 2025 <br><br>
@@ -23,7 +23,7 @@
 
         I will number the things we have to handle to run this container securely <br><br><br>
         1. Disable postfix service (If you don't disable it, the application will throw a warning but won't crash) <br><br>
-        2. Writing pgadmin data to /var/lib/pgadmin (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must)
+        2. Writing pgadmin data to /var/lib/pgadmin (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
         3. writing logs to /var/log/pgadmin during runtime, we don't have permissions as random UID (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
         4. writing files to /tmp (Important only if using securityContext readOnlyFileSystem=true, not a must in OpenShift restricted-v2 SCC / restricted PSS) <br><br>
         5. /pgadmin4/config_distro.py file is getting overriden during runtime, we don't have permissions if we are using random UID (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>

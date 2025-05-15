@@ -94,8 +94,8 @@ initContainers:
     seccompProfile:
       type: RuntimeDefault
     volumeMounts:
-    - mountPath: /emptydir
-      name: empty-dir
+    - name: empty-dir
+      mountPath: /emptydir
 </pre>
 <pre>
 containers:

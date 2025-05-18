@@ -32,7 +32,7 @@
 
         Lets get to the practical needs to run it. <br><br>
 
-        First of all, the pgAdmin4 container was running as predefined user 'pgadmin' by default and I have commited to official pgAdmin4 github repo Dockerfile (<a href="https://github.com/deployment.yaml">PR</a>) to change it to user 5050 instead,  because if k8s securityContext runAsNonRoot=true is set, k8s wouldn't know what uid the user would run by its metadata which will result in containerCreationError. Implementation since pgAdmin4 v9.4.0 which doesn't exist at the time im writing this but tag 'snapshot' can be used instead. <br><br><br><br><br>
+        First of all, the pgAdmin4 container was running as predefined user 'pgadmin' by default and I have commited to official pgAdmin4 github repo Dockerfile (<a href="https://github.com/pgadmin-org/pgadmin4/pull/8736">PR</a>) to change it to user 5050 instead,  because if k8s securityContext runAsNonRoot=true is set, k8s wouldn't know what uid the user would run by its metadata which will result in CreateContainerConfigError. Implementation since pgAdmin4 v9.4.0 which doesn't exist at the time im writing this but tag 'snapshot' can be used instead. <br><br><br><br><br>
 
         I will number the things we have to handle to run this container securely <br><br><br>
         1. Disable postfix service (If you don't disable it, the application will throw a warning but won't crash) <br><br>

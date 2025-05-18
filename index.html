@@ -75,7 +75,12 @@ volumeMounts:
   mountPath: /tmp
   subPath: tmp
 </pre> <br><br>
-        5. As for this config_distro.py file, he is empty and getting overriden during runtime, you can either use a configMap to mount your own configuration or changing the file permissions with an initContainer and emptyDir and then mounting it in the main container as I did. im adding my initContainer and main container configuration. <br>
+        5. As for this config_distro.py file, he is empty and getting overriden during runtime, you can either use a configMap to mount your own configuration or changing the file permissions with an initContainer and emptyDir and then mounting it in the main container as I did. im adding my volumes, initContainer and main container configuration. <br>
+<pre>
+volumes:
+  - name empty-dir
+    emptyDir: {}
+</pre>
 <pre>
 initContainers:
 - name: modify-config-distro-py-permissions
@@ -108,9 +113,10 @@ containers:
 </pre> <br><br>
         6. If you take a look at the Dockerfile of the pgAdmin image <a href="https://github.com/pgadmin-org/pgadmin4/blob/master/Dockerfile">Here</a>, at the end you can see that they are using setcap command which allows the binary of python3.12 to run and expose at ports lower than 1024 even if you are using non root user, they were trying to allow this because they are using UID 5050 in their container and wanted to maintain usage of default port 80. When using restricted PSS or OpenShift SCCs, you must drop all capabilities including the one they attached to the python3 CLI. We are lucky that the only capability that is allowed with these k8s security policies is the same one, NET_BIND_SERVICE. The solution is to drop all capabilities and add this capability. Im adding how it supposed to look like. <br>
 <pre>
-capabilities:
-  drop: ["ALL"]
-  add: ["NET_BIND_SERVICE"]
+securityContext:
+  capabilities:
+    drop: ["ALL"]
+    add: ["NET_BIND_SERVICE"]
 </pre> <br><br><br>
         
         I have added a deployment.yaml example file in my github pages repository. <a href="https://korenp1.github.io/deployment.yaml">deployment.yaml</a> <br>

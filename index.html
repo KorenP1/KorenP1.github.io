@@ -75,7 +75,7 @@ volumeMounts:
   mountPath: /tmp
   subPath: tmp
 </pre> <br><br>
-        5. As for this config_distro.py file, he is empty and getting overriden during runtime, you can either use a configMap to mount your own configuration or changing the file permissions with an initContainer and emptyDir and then mounting it in the main container as I did. im adding my volumes, initContainer and main container configuration. <br>
+        5. As for this config_distro.py file, he is empty and getting overriden during runtime, you can either use a configMap to mount your own configuration or changing the file permissions with an initContainer and emptyDir and then mounting it in the main container as I did. im adding volumes, initContainer and main container configuration. <br>
 <pre>
 volumes:
   - name empty-dir

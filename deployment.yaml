@@ -25,7 +25,7 @@ spec:
             - name: empty-dir
               mountPath: /emptydir
           securityContext:
-            seLinuxOptions: {}
+# If not OpenShift add for extra security            seLinuxOptions: {}
             runAsNonRoot: true
             privileged: false
             readOnlyRootFilesystem: true
@@ -48,7 +48,7 @@ spec:
             privileged: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
-            seLinuxOptions: {}
+# If not OpenShift add for extra security            seLinuxOptions: {}
             seccompProfile:
               type: RuntimeDefault
           ports:

@@ -35,21 +35,28 @@
         First of all, the pgAdmin4 container was running as predefined user 'pgadmin' by default and I have commited to official pgAdmin4 Dockerfile (<a href="https://github.com/pgadmin-org/pgadmin4/pull/8736">PR</a>) to change it to user 5050 instead (pgadmin UID == 5050), because if k8s securityContext runAsNonRoot=true is set, k8s wouldn't know what uid the user would run with by reading the image's metadata which will result in CreateContainerConfigError. Implementation since pgAdmin4 v9.4.0 which doesn't exist at the time im writing this but tag 'snapshot' can be used instead. <br><br><br><br><br>
 
         I will number the things we have to handle to run this container securely <br><br><br>
-        1. Disable postfix service (If you don't disable it, the application will throw a warning but won't crash) <br><br>
-        2. Writing pgadmin data to /var/lib/pgadmin during runtime (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
-        3. Writing logs to /var/log/pgadmin during runtime (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
-        4. Writing files to /tmp (Must only if using securityContext readOnlyFileSystem=true, not a must in OpenShift restricted-v2 SCC / restricted PSS) <br><br>
-        5. /pgadmin4/config_distro.py file is getting overriden during runtime, (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
-        6. Unlock the usage of 'python3' CLI (/venv/bin/python3: Operation not permitted) error. <br><br><br><br><br>
+        1. Change listen port to higher than 1023 (Must only if using OpenShift) <br><br>
+        2. Disable postfix service (If you don't disable it, the application will throw a warning but won't crash) <br><br>
+        3. Writing pgadmin data to /var/lib/pgadmin during runtime (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
+        4. Writing logs to /var/log/pgadmin during runtime (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
+        5. Writing files to /tmp (Must only if using securityContext readOnlyFileSystem=true, not a must in OpenShift restricted-v2 SCC / restricted PSS) <br><br>
+        6. /pgadmin4/config_distro.py file is getting overriden during runtime, (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
+        7. Unlock the usage of 'python3' CLI (/venv/bin/python3: Operation not permitted) error. <br><br><br><br><br>
 
         Lets look at each of them <br><br><br>
-        1. Probably the easiest, adding the next environment variable to your pod. PGADMIN_DISABLE_POSTFIX=true <br>
+        1. Probably the easiest along the next one, adding the next environment variable to your pod. PGADMIN_LISTEN_ADDRESS="8080" <br>
+<pre>
+env:
+- name: PGADMIN_LISTEN_PORT
+  value: "8080"
+</pre> <br><br>
+        2. Adding the next environment variable to your pod. PGADMIN_DISABLE_POSTFIX=true <br>
 <pre>
 env:
 - name: PGADMIN_DISABLE_POSTFIX
   value: "true"
 </pre> <br><br>
-        2. Adding a volume to /var/lib/pgadmin path, can be either PVC or emptyDir <br>
+        3. Adding a volume to /var/lib/pgadmin path, can be either PVC or emptyDir <br>
 <pre>
 volumes:
 - name: pgadmin-data
@@ -60,7 +67,7 @@ volumeMounts:
 - name: pgadmin-data
   mountPath: /var/lib/pgadmin
 </pre> <br><br>
-        3, 4. Adding an emptyDir volume to /var/log/pgadmin, /tmp paths. <br>
+        4, 5. Adding an emptyDir volume to /var/log/pgadmin, /tmp paths. <br>
 <pre>
 volumes:
 - name: empty-dir
@@ -75,7 +82,7 @@ volumeMounts:
   mountPath: /tmp
   subPath: tmp
 </pre> <br><br>
-        5. As for this config_distro.py file, it is empty and getting overriden during runtime, you can either use a configMap to mount your own configuration or change the file permissions with an initContainer and emptyDir and then mounting it in the main container as I did. Im adding volumes, initContainer and main container's configuration. <br>
+        6. As for this config_distro.py file, it is empty and getting overriden during runtime, you can either use a configMap to mount your own configuration or change the file permissions with an initContainer and emptyDir and then mounting it in the main container as I did. Im adding volumes, initContainer and main container's configuration. <br>
 <pre>
 volumes:
   - name empty-dir
@@ -111,7 +118,7 @@ containers:
     ...
     ...
 </pre> <br><br>
-        6. If you take a look at the Dockerfile of the pgAdmin image <a href="https://github.com/pgadmin-org/pgadmin4/blob/master/Dockerfile">Here</a>, at the end you can see that they are using setcap command which allows the binary of python3.12 to run and expose at ports lower than 1024 even if you are using non root user, they were trying to allow this because they are using UID 5050 in their container and wanted to maintain usage of default port 80. When using restricted PSS or OpenShift SCCs, you must drop all capabilities including the one they attached to the python3 CLI. We are lucky that the only capability that is allowed with these k8s security policies is the same one, NET_BIND_SERVICE. The solution is to drop all capabilities and add this capability. Im adding how it supposed to look like. <br>
+        7. If you take a look at the Dockerfile of the pgAdmin image <a href="https://github.com/pgadmin-org/pgadmin4/blob/master/Dockerfile">Here</a>, at the end you can see that they are using setcap command which allows the binary of python3.12 to run and expose at ports lower than 1024 even if you are using non root user, they were trying to allow this because they are using UID 5050 in their container and wanted to maintain usage of default port 80. When using restricted PSS or OpenShift SCCs, you must drop all capabilities including the one they attached to the python3 CLI. We are lucky that the only capability that is allowed with these k8s security policies is the same one, NET_BIND_SERVICE. The solution is to drop all capabilities and add this capability. Im adding how it supposed to look like. <br>
 <pre>
 securityContext:
   capabilities:

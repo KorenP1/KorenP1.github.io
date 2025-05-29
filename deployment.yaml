@@ -20,7 +20,7 @@ spec:
           imagePullPolicy: IfNotPresent
           workingDir: /emptydir
           command: ["sh", "-x", "-c"]
-          args: ['ls /usr/bin/python3.* | sort -V -r | head -n 1 | xargs -I {} cp {} python3']
+          args: ['cp -p /pgadmin4/config_distro.py . && chmod 777 config_distro.py']
           volumeMounts:
             - name: empty-dir
               mountPath: /emptydir
@@ -39,7 +39,7 @@ spec:
           imagePullPolicy: IfNotPresent
           workingDir: /emptydir
           command: ["sh", "-x", "-c"]
-          args: ['cp -p /pgadmin4/config_distro.py . && chmod 777 config_distro.py']
+          args: ['ls /usr/bin/python3.* | sort -V -r | head -n 1 | xargs -I {} cp {} python3']
           volumeMounts:
             - name: empty-dir
               mountPath: /emptydir

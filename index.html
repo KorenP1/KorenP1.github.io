@@ -131,7 +131,7 @@ initContainers:
 - name: unset-python3-cli-net-cap
   workingDir: /emptydir
   command: ["sh", "-x", "-c"]
-  args: ["ls python3.* | sort -V -r | head -n 1 | xargs -I {} cp {} python3"]
+  args: ["ls /usr/bin/python3.* | sort -V -r | head -n 1 | xargs -I {} cp {} python3"]
   image: docker.io/dpage/pgadmin4:&ltMAKE SURE ITS THE SAME IMAGE AS THE ORIGINAL CONTAINER&gt
   securityContext:
     allowPrivilegeEscalation: false

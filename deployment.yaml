@@ -34,7 +34,7 @@ spec:
               drop: ["ALL"]
             seccompProfile:
               type: "RuntimeDefault"
-        - name: unset-
+        - name: unset-python3-cli-net-cap
           image: docker.io/dpage/pgadmin4:snapshot
           imagePullPolicy: IfNotPresent
           workingDir: /emptydir

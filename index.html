@@ -41,7 +41,7 @@
         4. Writing logs to /var/log/pgadmin during runtime (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
         5. Writing cache to /tmp during runtime (Must only if using securityContext readOnlyFileSystem=true) <br><br>
         6. /pgadmin4/config_distro.py file is getting overriden during runtime, (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
-        7. Unlock the usage of 'python3' CLI (/venv/bin/python3: Operation not permitted) error. <br><br><br><br><br>
+        7. Unlock the usage of 'python3' CLI (/venv/bin/python3: Operation not permitted) error. (2 ways, depends on security policy) <br><br><br><br><br>
 
         Lets look at each of them <br><br><br>
         1. Probably the easiest along the next one, adding the next environment variable to your pod. PGADMIN_LISTEN_PORT="8080" <br>
@@ -93,7 +93,7 @@ initContainers:
 - name: modify-config-distro-py-permissions
   workingDir: /emptydir
   command: ["sh", "-x", "-c"]
-  args: ["cp -p /pgadmin4/config_distro.py . && chmod 777 config_distro.py"]
+  args: ["cp /pgadmin4/config_distro.py . && chmod 777 config_distro.py"]
   image: docker.io/dpage/pgadmin4:&ltMAKE SURE ITS THE SAME IMAGE AS THE ORIGINAL CONTAINER&gt
   securityContext:
     allowPrivilegeEscalation: false
@@ -118,12 +118,42 @@ containers:
     ...
     ...
 </pre> <br><br>
-        7. If you take a look at the Dockerfile of the pgAdmin image <a href="https://github.com/pgadmin-org/pgadmin4/blob/master/Dockerfile">Here</a>, at the end you can see that they are using setcap command which allows the binary of python3.12 to run and expose at ports lower than 1024 even if you are using non root user, they were trying to allow this because they are using UID 5050 in their container and wanted to maintain usage of default port 80. When using restricted PSS or OpenShift SCCs, you must drop all capabilities including the one they attached to the python3 CLI. We are lucky that the only capability that is allowed with these k8s security policies is the same one, NET_BIND_SERVICE. The solution is to drop all capabilities and add this capability. Im adding how it supposed to look like. <br>
+        7. If you take a look at the Dockerfile of the pgAdmin image <a href="https://github.com/pgadmin-org/pgadmin4/blob/master/Dockerfile">Here</a>, at the end you can see that they are using setcap command which allows the binary of python3.VER to run and expose at ports lower than 1024 even if you are using non root user, they were trying to allow this because they are using UID 5050 in their container and wanted to maintain usage of default port 80. <br>There are 2 ways solving this, depends on your security policy.<br>When using restricted PSS or OpenShift SCCs, you must drop all capabilities including the one they attached to the python3 CLI. We are lucky that the only capability that is allowed with these k8s security policies is the same one, NET_BIND_SERVICE. The solution is to drop all capabilities and add this capability. Im adding how it supposed to look like. <br>
 <pre>
 securityContext:
   capabilities:
     drop: ["ALL"]
     add: ["NET_BIND_SERVICE"]
+</pre> <br>
+If your policy doesn't allow you to add the NET_BIND_SERVICE capability you must use an initContainer and an emptyDir to unset the capability and override the cli file, adding the initContainer and mount in the main container <br>
+<pre>
+initContainers:
+- name: unset-python3-cli-net-cap
+  workingDir: /emptydir
+  command: ["sh", "-x", "-c"]
+  args: ["ls python3.* | sort -V -r | head -n 1 | xargs -I {} cp {} python3"]
+  image: docker.io/dpage/pgadmin4:&ltMAKE SURE ITS THE SAME IMAGE AS THE ORIGINAL CONTAINER&gt
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    privileged: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    seLinuxOptions: {}
+    seccompProfile:
+      type: RuntimeDefault
+  volumeMounts:
+  - name: empty-dir
+    mountPath: /emptydir
+</pre> <br>
+<pre>
+containers:
+- volumeMounts:
+  - name: empty-dir
+    mountPath: /usr/bin/python3
+    subPath python3
+  ...
 </pre> <br><br><br>
         
         I have added a deployment.yaml example file in my github pages repository. <a href="https://korenp1.github.io/deployment.yaml">deployment.yaml</a> <br>

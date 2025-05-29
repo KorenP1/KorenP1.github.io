@@ -125,7 +125,7 @@ securityContext:
     drop: ["ALL"]
     add: ["NET_BIND_SERVICE"]
 </pre> <br><br>
-b. If your policy doesn't allow you to add the NET_BIND_SERVICE capability you must use an initContainer and an emptyDir to unset the capability and override the cli file, adding the initContainer and mount in the main container <br>
+b. If your policy doesn't allow you to add the NET_BIND_SERVICE capability you must use an initContainer and an emptyDir to unset the capability and override the python3 cli file, Im adding the initContainer and the volumeMount of the main container <br>
 <pre>
 initContainers:
 - name: unset-python3-cli-net-cap

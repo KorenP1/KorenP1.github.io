@@ -41,7 +41,7 @@
         4. Writing logs to /var/log/pgadmin during runtime (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
         5. Writing cache to /tmp during runtime (Must only if using securityContext readOnlyFileSystem=true) <br><br>
         6. /pgadmin4/config_distro.py file is getting overriden during runtime, (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
-        7. Unlock the usage of 'python3' CLI (/venv/bin/python3: Operation not permitted) error. (2 ways, depends on security policy) <br><br><br><br><br>
+        7. Unlock the usage of 'python3' CLI (/venv/bin/python3: Operation not permitted) error. (2 ways, depends on your security policy) <br><br><br><br><br>
 
         Lets look at each of them <br><br><br>
         1. Probably the easiest along the next one, adding the next environment variable to your pod. PGADMIN_LISTEN_PORT="8080" <br>
@@ -153,6 +153,7 @@ containers:
   - name: empty-dir
     mountPath: /usr/bin/python3
     subPath python3
+  ...
   ...
 </pre> <br><br><br>
         

@@ -39,7 +39,7 @@
         2. Disable postfix service (If you don't disable it, the application will throw a warning but won't crash) <br><br>
         3. Writing pgadmin data to /var/lib/pgadmin during runtime (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
         4. Writing logs to /var/log/pgadmin during runtime (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
-        5. Writing files to /tmp (Must only if using securityContext readOnlyFileSystem=true) <br><br>
+        5. Writing cache to /tmp during runtime (Must only if using securityContext readOnlyFileSystem=true) <br><br>
         6. /pgadmin4/config_distro.py file is getting overriden during runtime, (Not a must if running as user 5050 and readOnlyFileSystem=false is set, otherwise a must) <br><br>
         7. Unlock the usage of 'python3' CLI (/venv/bin/python3: Operation not permitted) error. <br><br><br><br><br>
 

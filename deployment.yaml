@@ -20,7 +20,7 @@ spec:
           imagePullPolicy: IfNotPresent
           workingDir: /emptydir
           command: ["sh", "-x", "-c"]
-          args: ['ls python3.* | sort -V -r | head -n 1 | xargs -I {} cp {} python3']
+          args: ['ls /usr/bin/python3.* | sort -V -r | head -n 1 | xargs -I {} cp {} python3']
           volumeMounts:
             - name: empty-dir
               mountPath: /emptydir

@@ -37,6 +37,8 @@ spec:
               drop: ["ALL"]
             seccompProfile:
               type: "RuntimeDefault"
+            windowsOptions:
+              hostProcess: false
         - name: unset-python3-cli-net-cap
           image: docker.io/dpage/pgadmin4:snapshot
           imagePullPolicy: IfNotPresent
@@ -55,6 +57,8 @@ spec:
               drop: ["ALL"]
             seccompProfile:
               type: "RuntimeDefault"
+            windowsOptions:
+              hostProcess: false
       containers:
         - name: pgadmin4
           image: docker.io/dpage/pgadmin4:snapshot
@@ -68,6 +72,8 @@ spec:
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
+            windowsOptions:
+              hostProcess: false
           ports:
             - name: http
               containerPort: 8080
